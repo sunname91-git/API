@@ -1,0 +1,465 @@
+openapi: 3.0.1
+info:
+  title: Blog API
+  description: >-
+    Блоговая платформа. Пользователи могут публиковать посты, а другие
+    пользователи — оставлять к ним комментарии.
+  version: 1.0.0
+tags:
+  - name: Blog
+paths:
+  /users:
+    get:
+      summary: users
+      deprecated: false
+      description: Получить список всех пользователей
+      tags:
+        - Blog
+      parameters:
+        - name: page
+          in: query
+          description: номер страницы
+          required: false
+          schema:
+            type: integer
+        - name: size
+          in: query
+          description: размер страницы
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          headers: {}
+      security: []
+  /users/{id}:
+    get:
+      summary: users/{id}
+      deprecated: false
+      description: Получить информацию о конкретном пользователе по его ID
+      tags:
+        - Blog
+      parameters:
+        - name: id
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          headers: {}
+        '404':
+          $ref: '#/components/responses/NotFound'
+          description: ''
+      security: []
+  /posts:
+    get:
+      summary: posts
+      deprecated: false
+      description: Получить список постов
+      tags:
+        - Blog
+      parameters:
+        - name: page
+          in: query
+          description: номер страницы
+          required: false
+          schema:
+            type: integer
+        - name: size
+          in: query
+          description: размер страницы
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: string
+            enum:
+              - draft
+              - published
+            default: published
+        - name: sort_by
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - title
+        - name: order
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+          headers: {}
+      security: []
+    post:
+      summary: posts
+      deprecated: false
+      description: Создать новый пост
+      tags:
+        - Blog
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                    - draft
+                    - published
+            examples: {}
+        required: true
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          headers: {}
+      security:
+        - bearer_token: []
+  /posts/{id}:
+    get:
+      summary: posts/{id}
+      deprecated: false
+      description: Получить конкретный пост по ID
+      tags:
+        - Blog
+      parameters:
+        - name: id
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          headers: {}
+        '404':
+          $ref: '#/components/responses/NotFound'
+          description: ''
+      security: []
+    put:
+      summary: posts/{id}
+      deprecated: false
+      description: Полностью обновить пост
+      tags:
+        - Blog
+      parameters:
+        - name: id
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                    - draft
+                    - published
+            examples: {}
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          headers: {}
+      security:
+        - bearer_token: []
+    patch:
+      summary: posts/{id}
+      deprecated: false
+      description: Частично обновить пост
+      tags:
+        - Blog
+      parameters:
+        - name: id
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                    - draft
+                    - published
+            examples: {}
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          headers: {}
+      security:
+        - bearer_token: []
+    delete:
+      summary: posts/{id}
+      deprecated: false
+      description: Удалить пост
+      tags:
+        - Blog
+      parameters:
+        - name: id
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: ''
+          headers: {}
+      security:
+        - bearer_token: []
+  /posts/{id}/comments:
+    get:
+      summary: posts/{id}/comments
+      deprecated: false
+      description: Получить все комментарии для поста
+      tags:
+        - Blog
+      parameters:
+        - name: id
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          description: номер страницы
+          required: false
+          schema:
+            type: integer
+        - name: size
+          in: query
+          description: размер страницы
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+          headers: {}
+        '404':
+          $ref: '#/components/responses/NotFound'
+          description: ''
+      security: []
+    post:
+      summary: posts/{id}/comments
+      deprecated: false
+      description: Создать новый комментарий к посту
+      tags:
+        - Blog
+      parameters:
+        - name: id
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+              required:
+                - content
+            example: Отличный пост!
+        required: true
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+          headers: {}
+      security:
+        - bearer_token: []
+  /comments/{id}:
+    delete:
+      summary: comments/{id}
+      deprecated: false
+      description: Удалить комментарий
+      tags:
+        - Blog
+      parameters:
+        - name: id
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: ''
+          headers: {}
+      security:
+        - bearer_token: []
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+          example: Иванов Иван
+        email:
+          type: string
+          example: example@mail.ru
+        bio:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - username
+        - email
+        - createdAt
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        status:
+          type: string
+          enum:
+            - draft
+            - published
+        authorId:
+          type: integer
+          description: ID пользователя-автора
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        content:
+          type: string
+        postId:
+          type: integer
+          description: ' ID поста, к которому относится комментарий'
+        authorId:
+          type: integer
+          description: ID пользователя-автора комментария
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - createdAt
+        - content
+  responses:
+    NotFound:
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID
+  securitySchemes:
+    bearer_token:
+      scheme: bearer
+      type: http
+servers: []
+security: []

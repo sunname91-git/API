@@ -1,0 +1,424 @@
+openapi: 3.1.0
+info:
+  title: Order Service
+  version: '1.0'
+  description: контракт API для микросервиса "Order Service"
+  summary: Order Service API
+  contact:
+    name: Andu
+    email: a@a.ru
+servers:
+  - url: /api/v1
+    description: PreProd
+paths:
+  /orders:
+    post:
+      summary: Создание заказа
+      operationId: post-orders
+      responses:
+        '201':
+          description: Created
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      description: Создание заказа
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+      security:
+        - JWT: []
+      parameters: []
+      tags:
+        - Orders
+    get:
+      summary: ''
+      operationId: get-orders
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderResponse'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: общее количество
+                      limit:
+                        type: integer
+                        description: сколько на странице
+                      offset:
+                        type: integer
+                        description: смещение
+                      hasMore:
+                        type: boolean
+                        description: Показать больше
+                required:
+                  - data
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      description: Получение всех заказов
+      parameters:
+        - schema:
+            type: string
+            minLength: 1
+          in: query
+          name: customerId
+          description: Фильтр по ID клиента
+        - schema:
+            enum:
+              - PENDING
+              - PROCESSING
+              - SHIPPED
+              - DELIVERED
+              - CANCELLED
+          in: query
+          name: status
+          description: Фильтр по статусу заказа
+        - schema:
+            type: number
+            minLength: 1
+            minimum: 1
+            maximum: 20
+          in: query
+          name: limit
+          description: Количество записей
+        - schema:
+            type: number
+            default: 0
+            minimum: 0
+          in: query
+          name: offset
+          description: Номер страницы
+      tags:
+        - Orders
+    parameters: []
+  '/orders/{orderId}':
+    parameters:
+      - schema:
+          type: string
+        name: orderId
+        in: path
+        required: true
+        description: Номер заказа
+    get:
+      summary: ''
+      operationId: get-orders-orderId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      description: Получение заказа по ID
+      parameters: []
+      security:
+        - JWT: []
+      tags:
+        - Orders
+    delete:
+      summary: ''
+      operationId: delete-orders-orderId
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      description: Удаление заказа
+      security:
+        - JWT: []
+      tags:
+        - Orders
+  '/orders/{orderId}/status':
+    parameters:
+      - schema:
+          type: string
+        name: orderId
+        in: path
+        required: true
+        description: Номер заказа
+    patch:
+      summary: ''
+      operationId: patch-orders-orderId-status
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      description: Изменение статуса заказа
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStatusUpdate'
+      security:
+        - JWT: []
+      tags:
+        - Orders
+components:
+  schemas:
+    ErrorResponse:
+      title: ErrorResponse
+      type: object
+      properties:
+        message:
+          type: string
+          description: Человекочитаемое описание ошибки
+        code:
+          type: string
+          description: Код ошибки
+        timestamp:
+          type: string
+          description: Время появления ошибки
+          format: date-time
+      required:
+        - message
+        - code
+        - timestamp
+    OrderCreate:
+      title: OrderCreate
+      type: object
+      properties:
+        customerId:
+          type: string
+          description: 'ID клиента. Если не указан, будет взят из аутентификационного токена'
+        customerEmail:
+          type: string
+          format: email
+          description: ' Email клиента. Если не указан, будет взят из аутентификационного токена.'
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+          description: адрес доставки
+        items:
+          type: array
+          description: список товаров в заказе
+          items:
+            $ref: '#/components/schemas/ItemInOrder'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        specialInstructions:
+          type: string
+          description: особые указания
+          maxLength: 500
+      required:
+        - shippingAddress
+        - items
+        - paymentMethod
+    OrderResponse:
+      title: OrderResponse
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID заказа
+          example: ord_67890
+          pattern: '^ord_[a-zA-Z0-9]+$'
+        status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+          description: Статус заказа
+        customerId:
+          type: string
+          description: ID клиента
+          minLength: 1
+        customerEmail:
+          type: string
+          format: email
+          description: email для уведомлений
+          minLength: 1
+          example: customer@example.com
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+          description: адрес доставки
+        items:
+          type: array
+          description: список товаров в заказе
+          items:
+            $ref: '#/components/schemas/ItemInOrder'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+          description: метод оплаты
+        totalAmount:
+          type: number
+          format: float
+          minimum: 0
+          example: 6011.99
+          description: Общая сумма заказа
+        specialInstructions:
+          type: string
+          description: особые указания
+      required:
+        - id
+        - status
+        - customerId
+        - customerEmail
+        - shippingAddress
+        - items
+        - paymentMethod
+        - totalAmount
+    ItemInOrder:
+      title: ItemInOrder
+      type: object
+      properties:
+        productId:
+          type: string
+          description: ID товара
+          minLength: 1
+        quantity:
+          type: integer
+          description: количество
+          minimum: 1
+          maximum: 999
+          example: 3
+        price:
+          type: number
+          description: цена за единицу
+          minimum: 0
+          example: 3001
+          format: float
+    ShippingAddress:
+      title: ShippingAddress
+      type: object
+      properties:
+        house:
+          type: number
+          minimum: 1
+          maximum: 999
+          description: Номер дома
+          example: 16
+        street:
+          type: string
+          minLength: 1
+          example: Ленинский пр-кт
+          maxLength: 30
+          description: Улица
+        city:
+          type: string
+          minLength: 1
+          example: Москва
+          maxLength: 20
+          description: Город
+        postalCode:
+          type: number
+          maximum: 999999
+          example: 159204
+          description: Индекс
+        country:
+          type: string
+          minLength: 3
+          maxLength: 29
+          description: Страна
+          example: Россия
+      required:
+        - house
+        - street
+        - city
+        - postalCode
+        - country
+    PaymentMethodEnum:
+      title: PaymentMethodEnum
+      type: string
+      enum:
+        - CREDIT_CARD
+        - PAYPAL
+        - BANK_TRANSFER
+    OrderStatusUpdate:
+      title: OrderStatusUpdate
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        reason:
+          type: string
+          description: Причина изменения
+      required:
+        - status
+    OrderStatusEnum:
+      title: OrderStatusEnum
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - SHIPPED
+        - DELIVERED
+        - CANCELLED
+  examples:
+    orderCreateExample:
+      summary: Пример создания заказа
+      value:
+        customerId: cust_12345
+        customerEmail: customer@example.com
+        shippingAddress:
+          house: 16
+          street: Ленинский пр-кт
+          city: Москва
+          postalCode: 159204
+          country: Россия
+        items:
+          - productId: prod_001
+            quantity: 2
+            price: 1500.5
+        paymentMethod: CREDIT_CARD
+        totalAmount: 3001
+        specialInstructions: Позвонить перед доставкой
+    OrderListExample:
+      summary: Пример списка заказов с пагинацией
+      value:
+        data:
+          - id: ord_123
+            status: PENDING
+            customerId: cust_12345
+        pagination:
+          total: 150
+          limit: 20
+          offset: 0
+          hasMore: true
+  securitySchemes:
+    JWT:
+      type: http
+      scheme: bearer
+tags:
+  - name: Orders

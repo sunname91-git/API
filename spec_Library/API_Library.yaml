@@ -1,0 +1,145 @@
+openapi: 3.1.0
+info:
+  title: Library API
+  version: '1.0'
+  summary: Library Management API
+  description: API для управления Библоитекой
+servers:
+  - url: 'http://api.preprod.com/v1'
+    description: PreProduction server
+paths:
+  /books:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookResponse'
+      operationId: get-books
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: year
+          description: Фильтр по году публикации
+      description: Получить список всех книг
+    post:
+      summary: ''
+      operationId: post-books
+      responses:
+        '201':
+          description: Created
+      description: Добавить новую книгу
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCreate'
+  '/books/{bookid}':
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      operationId: get-books-bookid
+      description: Получить конкретную книгу
+    parameters:
+      - schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+        name: bookid
+        in: path
+        required: true
+        description: Идентификатор книги
+components:
+  schemas:
+    BookResponse:
+      title: BookResponse
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор
+        title:
+          type: string
+          description: Название книги
+          minLength: 1
+          maxLength: 255
+        author:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Автор
+        year:
+          type: integer
+          description: Год издания
+          minimum: 1500
+          maximum: 2100
+      required:
+        - id
+        - title
+        - author
+        - year
+    BookCreate:
+      title: BookCreate
+      type: object
+      properties:
+        title:
+          type: string
+          description: Название книги
+          minLength: 1
+          maxLength: 255
+        author:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Автор
+        year:
+          type: integer
+          description: Год издания
+          minimum: 1500
+          maximum: 2100
+      required:
+        - title
+        - author
+        - year
+    ErrorResponse:
+      title: ErrorResponse
+      type: object
+      properties:
+        message:
+          type: string
+          description: Описание ошибки
+        code:
+          type: string
+          description: Код ошибки
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+      required:
+        - message
+        - code
+        - timestamp
+      description: Шаблон ошибок
+  responses:
+    NotFound:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

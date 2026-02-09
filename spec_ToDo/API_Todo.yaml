@@ -1,0 +1,345 @@
+openapi: 3.1.0
+info:
+  title: Todo API
+  version: '1.0'
+  description: API для управления задачами
+  summary: Task Management API
+servers:
+  - url: 'http://api.example.com/v1'
+    description: Production server
+paths:
+  /tasks:
+    parameters: []
+    get:
+      summary: ''
+      operationId: get-tasks
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaskResponse'
+                  page:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  totalItems:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      description: список всех задач
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            format: int32
+          in: query
+          name: page
+          description: Номер страницы
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            format: int32
+          in: query
+          name: size
+          description: Количество задач на странице
+        - schema:
+            $ref: '#/components/schemas/TaskStatus'
+          in: query
+          name: completed
+          description: Статус выполнения
+        - schema:
+            type: string
+            enum:
+              - title
+              - updatedAt
+              - createdAt
+              - dueDate
+          in: query
+          name: sort
+          description: 'Поле для сортировки (например, createdAt, dueDate)'
+        - schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+          in: query
+          name: order
+          description: Порядок сортировки
+    post:
+      summary: ''
+      operationId: post-tasks
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      description: создание новой задачи
+  '/tasks/{id}':
+    parameters:
+      - schema:
+          type: integer
+          minimum: 1
+        name: id
+        in: path
+        required: true
+        description: идентификатор задачи
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      operationId: get-tasks-id
+      description: получение задачи по ID
+      parameters: []
+    put:
+      summary: ''
+      operationId: put-tasks-id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      description: обновление задачи
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+    delete:
+      summary: ''
+      operationId: delete-tasks-id
+      responses:
+        '204':
+          description: No Content
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      description: удаление задачи
+      parameters: []
+    patch:
+      summary: ''
+      operationId: patch-tasks-id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters: []
+      description: 'частичное обновление (например, статуса)'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskPatch'
+components:
+  schemas:
+    TaskCreate:
+      title: TaskCreate
+      type: object
+      properties:
+        title:
+          type: string
+          description: название задачи
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          description: описание
+          maxLength: 1000
+        dueDate:
+          type: string
+          description: срок выполнения
+          format: date-time
+        completed:
+          $ref: '#/components/schemas/TaskStatus'
+          description: статус выполнения
+      required:
+        - title
+    TaskUpdate:
+      title: TaskUpdate
+      type: object
+      properties:
+        title:
+          type: string
+          description: название задачи
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          description: описание
+          maxLength: 1000
+        completed:
+          $ref: '#/components/schemas/TaskStatus'
+          description: статус выполнения
+        dueDate:
+          type: string
+          description: срок выполнения
+          format: date-time
+      required:
+        - title
+        - description
+        - completed
+        - dueDate
+    TaskPatch:
+      title: TaskPatch
+      type: object
+      properties:
+        title:
+          type: string
+          description: название задачи
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          description: описание
+          maxLength: 1000
+        completed:
+          $ref: '#/components/schemas/TaskStatus'
+          description: статус выполнения
+        dueDate:
+          type: string
+          description: срок выполнения
+          format: date-time
+    TaskResponse:
+      title: TaskResponse
+      type: object
+      properties:
+        id:
+          type: integer
+          description: уникальный идентификатор
+        title:
+          type: string
+          description: название задачи
+        description:
+          type: string
+          description: описание
+        completed:
+          $ref: '#/components/schemas/TaskStatus'
+          description: статус выполнения
+        createdAt:
+          type: string
+          description: дата создания
+          format: date-time
+        dueDate:
+          type:
+            - string
+            - 'null'
+          description: срок выполнения
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          description: дата последнего обновления
+      required:
+        - id
+        - title
+        - completed
+        - createdAt
+        - dueDate
+        - updatedAt
+    TaskStatus:
+      title: TaskStatus
+      type: string
+      description: Статус задачи
+      enum:
+        - Открыта
+        - В Работе
+        - Закрыта
+      default: Открыта
+    ErrorResponse:
+      title: ErrorResponse
+      type: object
+      properties:
+        message:
+          type: string
+          description: Сообщение об ошибке
+        code:
+          type: string
+          description: Код ошибки
+          example: NOT_FOUND
+        timestamp:
+          type: string
+          description: Время возникновения ошибки
+          format: date-time
+      required:
+        - message
+        - code
+  securitySchemes: {}
+  requestBodies: {}
+  responses:
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            Example:
+              value:
+                message: Задача не найдена
+                code: TASK_NOT_FOUND
+                timestamp: '2026-01-15T10:30:00Z'
+    BadRequest:
+      description: Неверный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: |
+        Доступ запрещен
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
