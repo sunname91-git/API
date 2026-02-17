@@ -1,0 +1,1272 @@
+openapi: 3.1.0
+info:
+  title: Product-Service
+  version: '1.0'
+  description: контракт API для микросервиса "Product Service"
+  summary: Product-Service API
+  contact:
+    name: Andru
+    email: a@a.ru
+servers:
+  - url: /api/v1
+    description: PreProd
+paths:
+  /products:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Product
+      responses:
+        '200':
+          description: OK
+          headers: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductResponse'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: общее количество
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+                      hasMore:
+                        type: boolean
+                        description: показать больше
+                required:
+                  - data
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/ProductListResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      operationId: get-products
+      description: 'Получить список товаров с фильтрацией, сортировкой и пагинацией'
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: limit
+          description: Количество записей
+        - schema:
+            type: integer
+          in: query
+          name: offset
+          description: Смещение на количество записей
+        - schema:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 99999.99
+          in: query
+          name: minPrice
+          description: Минимальная цена
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          in: query
+          name: rating
+          description: Фильтр по минимальному рейтингу
+        - schema:
+            type: boolean
+          in: query
+          name: stock
+          description: Только товары в наличии (stock > 0)
+        - schema:
+            type: string
+          in: query
+          name: categoryId
+          description: Фильтр по категории
+        - schema:
+            $ref: '#/components/schemas/SortEnum'
+          in: query
+          name: sort
+          description: Сортировка
+        - schema:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 99999.99
+          in: query
+          name: maxPrice
+          description: Максимальная цена
+    post:
+      summary: ''
+      operationId: post-products
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/ProductResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      description: Создать новый товар (только для админов)
+      security:
+        - JWT: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+            examples:
+              Example 1:
+                $ref: '#/components/examples/ProductCreateExample'
+      tags:
+        - Product
+  '/products/{productId}':
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Product
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/ProductResponseExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      operationId: get-products-productId
+      description: Получить товар по ID
+    parameters:
+      - schema:
+          type: string
+        name: productId
+        in: path
+        required: true
+    patch:
+      summary: ''
+      operationId: patch-products-productId
+      responses:
+        '200':
+          description: Update Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+                description: Успешное обновление
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/ProductResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      description: Частично обновить товар (только для админов)
+      security:
+        - JWT: []
+      tags:
+        - Product
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductPatch'
+    delete:
+      summary: ''
+      operationId: delete-products-productId
+      responses:
+        '204':
+          description: No Content
+          content: {}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      description: 'Удалить товар (только для админов, мягкое удаление)'
+      security:
+        - JWT: []
+      tags:
+        - Product
+  '/products/{productId}/reviews':
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Product
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/ReviewResponseExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      operationId: get-products-productId-reviews
+      description: Получить отзывы с пагинацией
+    parameters:
+      - schema:
+          type: string
+        name: productId
+        in: path
+        required: true
+    post:
+      summary: ''
+      operationId: post-products-productId-reviews
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - JWT: []
+      description: Добавить отзыв (только для авторизованных)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate'
+      tags:
+        - Product
+  '/products/reviews/{reviewId}':
+    parameters:
+      - schema:
+          type: string
+        name: reviewId
+        in: path
+        required: true
+    delete:
+      summary: ''
+      operationId: delete-products-reviews-reviewId
+      responses:
+        '204':
+          description: No Content
+          content: {}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      description: Удалить отзыв (автор или админ)
+      security:
+        - JWT: []
+      tags:
+        - Product
+    patch:
+      summary: ''
+      operationId: patch-products-reviews-reviewId
+      responses:
+        '204':
+          description: Update Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      description: Обновить отзыв (только автор)
+      security:
+        - JWT: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate'
+      tags:
+        - Product
+  /categories:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Category
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/CategoryTreeExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      operationId: get-categories
+      description: Получить дерево категорий
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: includeInactive
+          description: Включать неактивные категории. Требует JWT с правами администратора. Если передан без токена — вернется 401.
+        - schema:
+            type: integer
+          in: query
+          name: depth
+          description: глубина вложенности
+    post:
+      summary: ''
+      operationId: post-categories
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/CategoryResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      description: Создание категории
+      security:
+        - JWT: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreate'
+      tags:
+        - Category
+  '/categories/{categoryId}':
+    parameters:
+      - schema:
+          type: string
+        name: categoryId
+        in: path
+        required: true
+    patch:
+      summary: ''
+      operationId: patch-categories-categoryId
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/CategoryResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      description: Обновление категории
+      tags:
+        - Category
+      security:
+        - JWT: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryPatch'
+    delete:
+      summary: ''
+      operationId: delete-categories-categoryId
+      responses:
+        '204':
+          description: No Content
+          content: {}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      description: Удалить категорию (если нет товаров)
+      tags:
+        - Category
+      security:
+        - JWT: []
+    get:
+      summary: ''
+      operationId: get-categories-categoryId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/CategoryTreeExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      description: Получение категории по ID с подкатегориями
+      tags:
+        - Category
+  '/inventory/{productId}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/InventoryResponseExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      operationId: get-inventory
+      parameters: []
+      description: Получить остаток
+      tags:
+        - Inventory
+    parameters:
+      - schema:
+          type: string
+        name: productId
+        in: path
+        required: true
+        description: Остаток по товару
+    patch:
+      summary: ''
+      operationId: patch-inventory
+      responses:
+        '204':
+          description: Update Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/InventoryResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+      parameters: []
+      description: Обновить остаток
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryPatch'
+            examples: {}
+      security:
+        - JWT: []
+      tags:
+        - Inventory
+  /inventory/check:
+    parameters: []
+    post:
+      summary: ''
+      operationId: post-inventory-check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryResponse'
+              examples:
+                Example 1:
+                  $ref: '#/components/examples/InventoryCheckResponseExample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/InventoryPost'
+            examples:
+              Example 1:
+                $ref: '#/components/examples/InventoryCheckRequestExample'
+        description: ''
+      security:
+        - JWT: []
+      tags:
+        - Inventory
+      description: Запрос на проверку наличия перечисленного товара
+components:
+  schemas:
+    ProductResponse:
+      title: ProductResponse
+      type: object
+      description: Атрибуты товара (Product) в ответе
+      properties:
+        productId:
+          type: string
+          description: 'Уникальный идентификатор товара в системе (UUID или строка с префиксом, например prod_)'
+        sku:
+          type: string
+          description: 'Артикул (Stock Keeping Unit), уникальный код товара для бизнеса/склада'
+          example: '"NBK-2025-BLACK-M"'
+          minLength: 3
+          maxLength: 50
+        name:
+          type: string
+          description: Название товара
+          minLength: 3
+          maxLength: 300
+        description:
+          type: string
+          description: Описание товара
+        price:
+          type: number
+          description: Цена товара
+          format: float
+          minimum: 0
+          maximum: 99999.99
+        currency:
+          type: string
+          enum:
+            - RUB
+            - EUR
+            - USD
+            - CNY
+          default: RUB
+          description: Валюта цены
+        stock:
+          type: integer
+          description: Доступное количество на складе
+          minimum: 0
+        categoryId:
+          type: string
+          description: ID категории товара
+        images:
+          type: array
+          description: Ссылки на изображения товара
+          items:
+            type: string
+            format: uri
+        weight:
+          type: number
+          format: float
+          minimum: 0
+          description: Вес в граммах
+        dimensions:
+          type: object
+          description: 'Габариты: {длина, ширина, высота} в см'
+          additionalProperties: false
+          properties:
+            length:
+              type: number
+              minimum: 0
+            width:
+              type: number
+              minimum: 0
+            height:
+              type: number
+              minimum: 0
+        attributes:
+          type: object
+          description: 'Дополнительные характеристики (цвет, размер, материал и т.д.)'
+        isActive:
+          type: boolean
+          default: true
+          description: Флаг активности товара (мягкое удаление)
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+          description: Средний рейтинг (вычисляемое поле)
+        reviewCount:
+          type: integer
+          description: Количество отзывов (вычисляемое поле)
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания
+        updatedAt:
+          type: string
+          format: date-time
+          description: Дата последнего обновления
+      required:
+        - productId
+        - sku
+        - name
+        - price
+        - stock
+        - categoryId
+    ProductCreate:
+      title: ProductCreate
+      type: object
+      description: Атрибуты товара (Product) для создания
+      properties:
+        sku:
+          type: string
+          description: 'Артикул (Stock Keeping Unit), уникальный код товара для бизнеса/склада'
+          example: '"NBK-2025-BLACK-M"'
+          minLength: 3
+          maxLength: 50
+        name:
+          type: string
+          description: Название товара
+          minLength: 3
+          maxLength: 300
+        description:
+          type: string
+          description: Описание товара
+        price:
+          type: number
+          description: Цена товара
+          format: float
+          minimum: 0
+          maximum: 99999.99
+        currency:
+          type: string
+          enum:
+            - RUB
+            - EUR
+            - USD
+            - CNY
+          default: RUB
+          description: Валюта цены
+        categoryId:
+          type: string
+          description: ID категории товара
+        images:
+          type: array
+          description: Ссылки на изображения товара
+          items:
+            type: string
+            format: uri
+        weight:
+          type: number
+          format: float
+          minimum: 0
+          description: Вес в граммах
+        dimensions:
+          type: object
+          description: 'Габариты: {длина, ширина, высота} в см'
+          additionalProperties: false
+          properties:
+            length:
+              type: number
+              minimum: 0
+            width:
+              type: number
+              minimum: 0
+            height:
+              type: number
+              minimum: 0
+        attributes:
+          type: object
+          description: 'Дополнительные характеристики (цвет, размер, материал и т.д.)'
+      required:
+        - sku
+        - name
+        - price
+        - categoryId
+    ProductPatch:
+      title: ProductPatch
+      type: object
+      description: Атрибуты товара (Product) для изменения
+      properties:
+        name:
+          type: string
+          description: Название товара
+          minLength: 3
+          maxLength: 300
+        description:
+          type: string
+          description: Описание товара
+        price:
+          type: number
+          description: Цена товара
+          format: float
+          minimum: 0
+          maximum: 99999.99
+        currency:
+          type: string
+          enum:
+            - RUB
+            - CNY
+            - EUR
+            - USD
+          default: RUB
+          description: Валюта цены
+        categoryId:
+          type: string
+          description: ID категории товара
+        images:
+          type: array
+          description: Ссылки на изображения товара
+          items:
+            type: string
+            format: uri
+        weight:
+          type: number
+          format: float
+          minimum: 0
+          description: Вес в граммах
+        dimensions:
+          type: object
+          description: 'Габариты: {длина, ширина, высота} в см'
+          additionalProperties: false
+          properties:
+            length:
+              type: number
+              minimum: 0
+            width:
+              type: number
+              minimum: 0
+            height:
+              type: number
+              minimum: 0
+        attributes:
+          type: object
+          description: 'Дополнительные характеристики (цвет, размер, материал и т.д.)'
+    CategoryResponse:
+      title: CategoryResponse
+      type: object
+      description: Атрибуты категории товаров (Category) в ответе
+      properties:
+        categoryId:
+          type: string
+          description: 'Уникальный идентификатор категории (например, с префиксом cat_)'
+          minLength: 3
+          maxLength: 50
+          pattern: '^cat_[a-zA-Z0-9_-]+$'
+          example: cat_elec_laptops
+        name:
+          type: string
+          description: Название категории
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          description: Описание категории
+          maxLength: 255
+        parentId:
+          type:
+            - string
+            - 'null'
+          description: ID родительской категории. Если null — корневая категория
+          default: 'NULL'
+          example: cat_elec
+        path:
+          type: string
+          description: 'Полный путь в дереве (например, electronics/laptops/gaming)'
+        level:
+          type: integer
+          description: 'Уровень вложенности (0 — корень, 1 — дочерняя и т.д.)'
+          minimum: 0
+          maximum: 5
+        isActive:
+          type: boolean
+          default: true
+          description: Активна ли категория (для мягкого удаления)
+        sortOrder:
+          type: integer
+          default: 0
+          minimum: 0
+          description: Порядок сортировки в интерфейсе
+        productCount:
+          type: integer
+          minimum: 0
+          description: Количество товаров в категории (вычисляемое поле)
+        image:
+          type: string
+          description: Ссылка на изображение/иконку категории
+          format: uri
+          example: 'https://cdn.store.com/categories/laptops.png'
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания
+        updatedAt:
+          type: string
+          format: date-time
+          description: Дата последнего обновления
+      required:
+        - categoryId
+        - name
+        - isActive
+    CategoryCreate:
+      title: CategoryCreate
+      type: object
+      description: Атрибуты категории товаров (Category) для создания
+      properties:
+        name:
+          type: string
+          description: Название категории
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          description: Описание категории
+          maxLength: 255
+        parentId:
+          type:
+            - string
+            - 'null'
+          description: ID родительской категории. Если null — корневая категория
+          default: 'NULL'
+          example: cat_elec
+        isActive:
+          type: boolean
+          default: true
+          description: Активна ли категория (для мягкого удаления)
+        image:
+          type: string
+          description: Ссылка на изображение/иконку категории
+          format: uri
+          example: 'https://cdn.store.com/categories/laptops.png'
+      required:
+        - name
+        - isActive
+    CategoryPatch:
+      title: CategoryPatch
+      type: object
+      description: Атрибуты категории товаров (Category) при измении
+      properties:
+        name:
+          type: string
+          description: Название категории
+          minLength: 2
+          maxLength: 100
+        description:
+          type: string
+          description: Описание категории
+          maxLength: 255
+        parentId:
+          type:
+            - string
+            - 'null'
+          description: ID родительской категории. Если null — корневая категория
+          default: 'NULL'
+          example: cat_elec
+        isActive:
+          type: boolean
+          default: true
+          description: Активна ли категория (для мягкого удаления)
+        image:
+          type: string
+          description: Ссылка на изображение/иконку категории
+          format: uri
+          example: 'https://cdn.store.com/categories/laptops.png'
+    ReviewResponse:
+      title: ReviewResponse
+      type: object
+      description: Атрибуты отзыва по продукту для ответа
+      properties:
+        reviewId:
+          type: string
+          description: идентификато ротзыва
+        productId:
+          type: string
+          description: идентификатор продукта на который оставлен отзыв
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        description:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: текст отзыва
+        image:
+          type: array
+          description: ссылки на картинки прикрепленные к отзыву
+          items:
+            type: string
+            format: uri
+        createdAt:
+          type: string
+          format: date-time
+          description: дата создания отзыва
+        updatedAt:
+          type: string
+          format: date-time
+          description: Дата последнего изменения отзыва
+      required:
+        - reviewId
+        - productId
+        - rating
+        - description
+    ReviewCreate:
+      title: ReviewCreate
+      type: object
+      description: Атрибуты отзыва по продукту при создания
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: оценка от 1 до 5
+        description:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: текст отзыва
+        image:
+          type: array
+          description: ссылки на картинки прикрепленные к отзыву
+          items:
+            type: string
+            format: uri
+      required:
+        - rating
+        - description
+    InventoryResponse:
+      title: InventoryResponse
+      type: object
+      properties:
+        productId:
+          type: string
+          description: ID продукта
+        quantity:
+          type: integer
+          description: количество
+        price:
+          type: number
+          format: float
+          description: Цена товара
+        reserved:
+          type: integer
+          description: Количество в резерве
+      required:
+        - productId
+        - quantity
+        - price
+        - reserved
+    InventoryPatch:
+      title: InventoryPatch
+      type: object
+      properties:
+        quantity:
+          type: integer
+          description: количество
+        operationType:
+          type: string
+          enum:
+            - Plus
+            - Minus
+            - Reserved
+          description: Тип операции по изменению количества товара
+      required:
+        - quantity
+        - operationType
+    InventoryPost:
+      title: InventoryPost
+      type: object
+      description: Запрос на проверку наличия перечисленного товара
+      properties:
+        productId:
+          type: string
+          description: ID продукта
+        quantity:
+          type: integer
+          description: количество
+      required:
+        - productId
+        - quantity
+    ErrorResponse:
+      title: ErrorResponse
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - message
+        - code
+        - timestamp
+    SortEnum:
+      title: SortEnum
+      type: string
+      enum:
+        - 'price:asc'
+        - 'price:desc'
+        - 'rating:asc'
+        - 'rating:desc'
+        - 'name:asc'
+        - 'name:desc'
+        - 'createdAt:asc'
+        - 'createdAt:desc'
+      default: 'name:asc'
+  securitySchemes:
+    JWT:
+      type: http
+      scheme: bearer
+  responses:
+    BadRequest:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+            description: Ошибка валидации
+          examples:
+            Example 1:
+              $ref: '#/components/examples/ErrorResponseExample'
+    Unauthorized:
+      description: Неавторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+            description: Неавторизован
+          examples:
+            Example 1:
+              $ref: '#/components/examples/ErrorResponseExample'
+    Forbidden:
+      description: Нет прав
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+            description: Нет прав
+          examples:
+            Example 1:
+              $ref: '#/components/examples/ErrorResponseExample'
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+            description: Ресурс не найден
+          examples:
+            Example 1:
+              $ref: '#/components/examples/ErrorResponseExample'
+    Conflict:
+      description: 'Конфликт (например, удаление категории с товарами)'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+            description: Конфликт
+          examples:
+            Example 1:
+              $ref: '#/components/examples/ErrorResponseExample'
+  examples:
+    ProductResponseExample:
+      value:
+        productId: prod_123abc
+        sku: NBK-2025-BLACK-M
+        name: Ноутбук игровой
+        description: Мощный ноутбук для игр и работы
+        price: 99999.99
+        currency: RUB
+        stock: 42
+        categoryId: cat_elec_laptops
+        images:
+          - 'https://cdn.store.com/products/laptop1.jpg'
+          - 'https://cdn.store.com/products/laptop2.jpg'
+        weight: 2300
+        dimensions:
+          length: 35
+          width: 24
+          height: 2
+        attributes:
+          color: Черный
+          processor: Intel i7
+          ram: 16GB
+        isActive: true
+        rating: 4.5
+        reviewCount: 128
+        createdAt: '2025-02-13T10:30:00Z'
+        updatedAt: '2025-02-13T10:30:00Z'
+    ProductListResponseExample:
+      summary: Пример списка товаров с пагинацией
+      value:
+        data:
+          - productId: prod_123abc
+            sku: NBK-2025-BLACK-M
+            name: Ноутбук игровой
+            price: 99999.99
+            currency: RUB
+            stock: 42
+            categoryId: cat_elec_laptops
+            rating: 4.5
+            reviewCount: 128
+            isActive: true
+          - productId: prod_456def
+            sku: PHN-2025-GOLD
+            name: Смартфон
+            price: 49999.99
+            currency: RUB
+            stock: 15
+            categoryId: cat_elec_phones
+            rating: 4.8
+            reviewCount: 256
+            isActive: true
+        pagination:
+          total: 150
+          limit: 20
+          offset: 0
+          hasMore: true
+    ProductCreateExample:
+      summary: Пример создания товара
+      value:
+        sku: NBK-2025-BLACK-M
+        name: Ноутбук игровой
+        description: Мощный ноутбук для игр и работы
+        price: 99999.99
+        currency: RUB
+        categoryId: cat_elec_laptops
+        images:
+          - 'https://cdn.store.com/products/laptop1.jpg'
+        weight: 2300
+        dimensions:
+          length: 35
+          width: 24
+          height: 2
+        attributes:
+          color: Черный
+          processor: Intel i7
+    CategoryResponseExample:
+      summary: Пример категории
+      value:
+        categoryId: cat_elec_laptops
+        name: Ноутбуки
+        description: Портативные компьютеры
+        parentId: cat_elec
+        path: electronics/laptops
+        level: 2
+        isActive: true
+        sortOrder: 10
+        productCount: 42
+        image: 'https://cdn.store.com/categories/laptops.png'
+        createdAt: '2025-02-13T10:30:00Z'
+        updatedAt: '2025-02-13T10:30:00Z'
+    CategoryTreeExample:
+      summary: Пример дерева категорий
+      value:
+        - categoryId: cat_elec
+          name: Электроника
+          level: 1
+          parentId: null
+          path: electronics
+          productCount: 500
+          isActive: true
+        - categoryId: cat_elec_laptops
+          name: Ноутбуки
+          level: 2
+          parentId: cat_elec
+          path: electronics/laptops
+          productCount: 120
+          isActive: true
+        - categoryId: cat_elec_phones
+          name: Смартфоны
+          level: 2
+          parentId: cat_elec
+          path: electronics/phones
+          productCount: 200
+          isActive: true
+    ReviewResponseExample:
+      summary: Пример отзыва
+      value:
+        reviewId: rev_789ghi
+        productId: prod_123abc
+        rating: 5
+        description: Отличный товар! Рекомендую
+        image:
+          - 'https://cdn.store.com/reviews/photo1.jpg'
+        createdAt: '2025-02-13T10:30:00Z'
+        updatedAt: '2025-02-13T10:30:00Z'
+    InventoryResponseExample:
+      summary: Пример остатка товара
+      value:
+        productId: prod_123abc
+        quantity: 42
+        price: 99999.99
+        reserved: 3
+    InventoryCheckRequestExample:
+      summary: Пример запроса на проверку наличия
+      value:
+        - productId: prod_123abc
+          quantity: 2
+        - productId: prod_456def
+          quantity: 1
+    InventoryCheckResponseExample:
+      summary: Пример ответа на проверку наличия
+      value:
+        - productId: prod_123abc
+          quantity: 42
+          price: 99999.99
+          reserved: 3
+          available: 39
+        - productId: prod_456def
+          quantity: 15
+          price: 49999.99
+          reserved: 0
+          available: 15
+    ErrorResponseExample:
+      summary: Пример ошибки
+      value:
+        message: Товар не найден
+        code: PRODUCT_NOT_FOUND
+        timestamp: '2025-02-13T10:30:00Z'
+tags:
+  - name: Category
+  - name: Inventory
+  - name: Product
