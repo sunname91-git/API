@@ -1,0 +1,293 @@
+openapi: 3.1.0
+info:
+  title: Payment-Service
+  version: '1.0'
+  summary: Payment-Service API
+  description: контракт API для микросервиса "Payment-Service"
+  contact:
+    email: a@a.ru
+    name: Andru
+servers:
+  - url: /api/v1
+    description: PreProd
+paths:
+  /payments:
+    post:
+      summary: ''
+      operationId: post-payments
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '402':
+          description: Ошибка платежа
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      description: Создание платежа
+      tags:
+        - Payment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreate'
+      security:
+        - JWT: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: header
+          name: Idempotency-Key
+          description: Уникальный ключ платежа
+  '/payments/{paymentId}':
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Payment
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      operationId: get-payments-paymentId
+      description: Получение статуса платежа
+    parameters:
+      - schema:
+          type: string
+        name: paymentId
+        in: path
+        required: true
+        description: идентификатор платежа
+  '/payments/{paymentId}/refunds':
+    parameters:
+      - schema:
+          type: string
+        name: paymentId
+        in: path
+        required: true
+        description: идентификатор платежа
+    post:
+      summary: ''
+      operationId: post-payments-paymentId-refunds
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      tags:
+        - Payment
+      security:
+        - JWT: []
+      description: Частичный или полный возврат средств (Refund)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRefund'
+webhooks:
+  paymentCompleted:
+    post:
+      summary: Событие об успешной оплате
+      operationId: paymentCompleted
+      requestBody:
+        description: 'Данные о транзакции, которые отправляет Payment Service'
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentEvent'
+      responses:
+        '200':
+          description: Webhook успешно получен получателем (Order Service)
+components:
+  schemas:
+    PaymentCreate:
+      title: PaymentCreate
+      type: object
+      properties:
+        orderId:
+          type: string
+          description: идентификатор заказа
+        totalAmount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          example: '6011.99'
+          description: сумма заказа
+        currency:
+          type: string
+          enum:
+            - RUB
+            - EUR
+            - USD
+            - CNY
+          default: RUB
+          description: Валюта платежа
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+          description: Тип платежа
+      required:
+        - orderId
+        - totalAmount
+        - currency
+        - paymentMethod
+      description: Создание платежа
+    PaymentResponse:
+      title: PaymentResponse
+      type: object
+      properties:
+        paymentId:
+          type: string
+          description: Идентификатор платежа
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+          description: Статус платежа
+        orderId:
+          type: string
+          description: идентификатор заказа
+        totalAmount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          example: '6011.99'
+          description: сумма заказа
+        currency:
+          type: string
+          enum:
+            - RUB
+            - EUR
+            - USD
+            - CNY
+          default: RUB
+          description: Валюта платежа
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+          description: Тип платежа
+      required:
+        - paymentId
+        - paymentStatus
+        - orderId
+        - totalAmount
+        - currency
+        - paymentMethod
+      description: Информация о платеже
+    PaymentRefund:
+      title: PaymentRefund
+      type: object
+      description: Создание возврата платежа
+      properties:
+        totalAmount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          example: '6011.99'
+          description: сумма возврата
+        reason:
+          type: string
+          description: Причина возврата
+          maxLength: 99
+      required:
+        - totalAmount
+    PaymentStatusEnum:
+      title: PaymentStatusEnum
+      type: string
+      enum:
+        - PENDING
+        - AUTHORIZED
+        - COMPLETED
+        - FAILED
+        - REFUNDED
+        - PARTIALLY_REFUNDED
+      description: Статусы платежей
+    PaymentMethodEnum:
+      title: PaymentMethodEnum
+      type: string
+      enum:
+        - CREDIT_CARD
+        - PAYPAL
+        - BANK_TRANSFER
+      description: Типы платежей
+    ErrorResponse:
+      title: ErrorResponse
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - message
+        - code
+        - timestamp
+      description: ''
+    PaymentEvent:
+      title: PaymentEvent
+      type: object
+      properties:
+        orderId:
+          type: string
+          description: Идентификатор заказа
+        transactionId:
+          type: string
+          description: Идентификатор транзакции
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+          description: Статус платежа
+      required:
+        - orderId
+        - transactionId
+        - paymentStatus
+  securitySchemes:
+    JWT:
+      type: http
+      scheme: bearer
+  responses:
+    BadRequest:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+            description: Ошибка валидации
+    Unauthorized:
+      description: Неавторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+            description: Неавторизован
+    Forbidden:
+      description: Нет прав
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+            description: Нет прав
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+tags:
+  - name: Payment

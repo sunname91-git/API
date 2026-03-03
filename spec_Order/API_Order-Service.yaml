@@ -97,15 +97,13 @@ paths:
           name: status
           description: Фильтр по статусу заказа
         - schema:
-            type: number
-            minLength: 1
+            type: integer
             minimum: 1
-            maximum: 20
           in: query
           name: limit
           description: Количество записей
         - schema:
-            type: number
+            type: integer
             default: 0
             minimum: 0
           in: query
@@ -140,27 +138,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       description: Получение заказа по ID
       parameters: []
-      security:
-        - JWT: []
-      tags:
-        - Orders
-    delete:
-      summary: ''
-      operationId: delete-orders-orderId
-      responses:
-        '204':
-          description: No Content
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      description: Удаление заказа
       security:
         - JWT: []
       tags:
@@ -236,6 +213,7 @@ components:
         items:
           type: array
           description: список товаров в заказе
+          minItems: 1
           items:
             $ref: '#/components/schemas/ItemInOrder'
         paymentMethod:
@@ -245,6 +223,8 @@ components:
           description: особые указания
           maxLength: 500
       required:
+        - customerId
+        - customerEmail
         - shippingAddress
         - items
         - paymentMethod
@@ -282,11 +262,10 @@ components:
           $ref: '#/components/schemas/PaymentMethodEnum'
           description: метод оплаты
         totalAmount:
-          type: number
-          format: float
-          minimum: 0
-          example: 6011.99
+          type: string
+          example: '6011.99'
           description: Общая сумма заказа
+          pattern: '^\d+\.\d{2}$'
         specialInstructions:
           type: string
           description: особые указания
@@ -314,21 +293,18 @@ components:
           maximum: 999
           example: 3
         price:
-          type: number
+          type: string
           description: цена за единицу
-          minimum: 0
-          example: 3001
-          format: float
+          example: '3001.00'
+          pattern: '^\d+\.\d{2}$'
     ShippingAddress:
       title: ShippingAddress
       type: object
       properties:
         house:
-          type: number
-          minimum: 1
-          maximum: 999
+          type: string
           description: Номер дома
-          example: 16
+          example: '16'
         street:
           type: string
           minLength: 1
@@ -342,10 +318,12 @@ components:
           maxLength: 20
           description: Город
         postalCode:
-          type: number
-          maximum: 999999
-          example: 159204
+          type: string
+          example: '159204'
           description: Индекс
+          minLength: 6
+          maxLength: 6
+          pattern: '^\d{6}$'
         country:
           type: string
           minLength: 3
@@ -385,6 +363,7 @@ components:
         - SHIPPED
         - DELIVERED
         - CANCELLED
+      description: Для отмены заказа используйте статус CANCELLED
   examples:
     orderCreateExample:
       summary: Пример создания заказа
@@ -392,17 +371,17 @@ components:
         customerId: cust_12345
         customerEmail: customer@example.com
         shippingAddress:
-          house: 16
+          house: '16'
           street: Ленинский пр-кт
           city: Москва
-          postalCode: 159204
+          postalCode: '159204'
           country: Россия
         items:
           - productId: prod_001
             quantity: 2
-            price: 1500.5
+            price: '1500.50'
         paymentMethod: CREDIT_CARD
-        totalAmount: 3001
+        totalAmount: '3001.00'
         specialInstructions: Позвонить перед доставкой
     OrderListExample:
       summary: Пример списка заказов с пагинацией
