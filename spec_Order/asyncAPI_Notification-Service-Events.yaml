@@ -1,0 +1,134 @@
+asyncapi: '2.6.0'
+info:
+  title: Notification Service Events
+  version: '1.0.0'
+  description: Сервис отвечает за отправку писем и SMS пользователям
+  contact:
+    name: Andru
+    email: a@a.ru
+
+servers:
+  production:
+    url: kafka://kafka.broker:9092
+    protocol: kafka
+    description: Брокер сообщений
+
+channels:
+  order.created:
+    description: Канал для событий создания нового заказа
+    subscribe: # Notification Service слушает этот канал и отправляет сообщение "Ваш заказ создан, ожидайте оплату"
+      message:
+        name: OrderCreated
+        payload:
+          type: object
+          required:
+            - orderId
+            - customerId
+            - items
+          properties:
+            orderId:
+              type: string
+              description: ID заказа
+            customerId:
+              type: string
+              description: ID клиента
+            items:
+              type: array
+              description: Список товаров в заказе
+              items:
+                $ref: '#/components/schemas/ItemInOrder'
+
+  order.cancelled:
+    description: Событие отмены заказа (для разблокировки товаров на складе)
+    subscribe: # Notification Service слушает этот канал и отправляет сообщение "Заказ отменен"
+      message:
+        name: OrderCancelled
+        payload:
+          type: object
+          required:
+            - orderId
+            - items
+          properties:
+            orderId:
+              type: string
+              description: ID отмененного заказа
+            reason:
+              type: string
+              description: Причина отмены (например, "Платеж не прошел")
+            items:
+              type: array
+              description: Список товаров, которые нужно вернуть в наличие
+              items:
+                $ref: '#/components/schemas/ItemInOrder'
+
+  payment.completed:
+    description: Канал для событий об успешной оплате
+    subscribe: # Notification Service слушает этот канал и отправляет письмо "Оплата прошла, заказ в работе"
+      message:
+        name: PaymentCompleted
+        payload:
+          type: object
+          required:
+            - orderId
+            - status
+          properties:
+            orderId:
+              type: string
+              description: ID заказа, который был оплачен
+            status:
+              type: string
+              enum: [SUCCESS, FAILED]
+            transactionId:
+              type: string
+
+  notification.failed:
+    description: Dead Letter Queue (DLQ) — канал, куда сервис отправляет сообщения, если не смог отправить письмо
+    publish: # Notification Service пишет канал
+      message:
+        name: NotificationFailed
+        payload:
+          type: object
+          required:
+            - notificationId
+            - message
+          properties:
+            notificationId:
+              type: string
+              description: ID сообщения
+            message:
+              description: Ошибка при отправке сообщения (например, почтовый сервер лежит)
+              $ref: '#/components/schemas/NotificationFailedPayload'
+
+components:
+  schemas:
+    # Схема товара внутри события
+    ItemInOrder:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        price:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          description: Цена на момент заказа (важно для истории)
+    NotificationFailedPayload:
+      type: object
+      required:
+        - notificationId
+        - errorReason
+      properties:
+        notificationId:
+          type: string
+        errorReason:
+          type: string
+          description: Текст ошибки
+          maxlength: 100
+        timestamp:
+          type: string
+          format: date-time

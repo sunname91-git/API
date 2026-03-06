@@ -110,7 +110,7 @@ webhooks:
       summary: Событие об успешной оплате
       operationId: paymentCompleted
       requestBody:
-        description: 'Данные о транзакции, которые отправляет Payment Service'
+        description: 'Данные о транзакции, которые отправляет Payment-Service'
         required: true
         content:
           application/json:
@@ -118,7 +118,7 @@ webhooks:
               $ref: '#/components/schemas/PaymentEvent'
       responses:
         '200':
-          description: Webhook успешно получен получателем (Order Service)
+          description: Webhook успешно получен получателем (Order-Service)
 components:
   schemas:
     PaymentCreate:
