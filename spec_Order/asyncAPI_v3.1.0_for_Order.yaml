@@ -1,0 +1,119 @@
+asyncapi: 3.1.0
+info:
+  title: Order Service Events
+  version: 1.0.0
+  description: События, которые генерирует и потребляет сервис заказов
+  contact:
+    name: Andru
+    email: a@a.ru
+servers:
+  production:
+    host: kafka.broker:9092
+    protocol: kafka
+    description: Брокер сообщений
+channels:
+  order.created:
+    address: order.created
+    messages:
+      publish.message:
+        name: OrderCreated
+        payload:
+          type: object
+          required:
+            - orderId
+            - customerId
+            - items
+          properties:
+            orderId:
+              type: string
+              description: ID заказа
+            customerId:
+              type: string
+              description: ID клиента
+            items:
+              type: array
+              description: Список товаров в заказе
+              items:
+                $ref: '#/components/schemas/ItemInOrder'
+    description: Канал для событий создания нового заказа
+  order.cancelled:
+    address: order.cancelled
+    messages:
+      publish.message:
+        name: OrderCancelled
+        payload:
+          type: object
+          required:
+            - orderId
+            - items
+          properties:
+            orderId:
+              type: string
+              description: ID отмененного заказа
+            reason:
+              type: string
+              description: Причина отмены (например, "Платеж не прошел")
+            items:
+              type: array
+              description: Список товаров, которые нужно вернуть в наличие
+              items:
+                $ref: '#/components/schemas/ItemInOrder'
+    description: Событие отмены заказа (для разблокировки товаров на складе)
+  payment.completed:
+    address: payment.completed
+    messages:
+      subscribe.message:
+        name: PaymentCompleted
+        payload:
+          type: object
+          required:
+            - orderId
+            - status
+          properties:
+            orderId:
+              type: string
+              description: ID заказа, который был оплачен
+            status:
+              type: string
+              enum:
+                - SUCCESS
+                - FAILED
+            transactionId:
+              type: string
+    description: Канал для событий об успешной оплате
+operations:
+  order.created.publish:
+    action: receive
+    channel:
+      $ref: '#/channels/order.created'
+    messages:
+      - $ref: '#/channels/order.created/messages/publish.message'
+  order.cancelled.publish:
+    action: receive
+    channel:
+      $ref: '#/channels/order.cancelled'
+    messages:
+      - $ref: '#/channels/order.cancelled/messages/publish.message'
+  payment.completed.subscribe:
+    action: send
+    channel:
+      $ref: '#/channels/payment.completed'
+    messages:
+      - $ref: '#/channels/payment.completed/messages/subscribe.message'
+components:
+  schemas:
+    ItemInOrder:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        price:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Цена на момент заказа (важно для истории)
