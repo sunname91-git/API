@@ -1,0 +1,142 @@
+openapi: 3.1.0
+info:
+  title: Subscription Renewal Funds Check API
+  description: API для проверки достаточности средств перед списанием за продление подписки
+  version: 1.0.0
+  contact:
+    name: Andru
+    email: a@a.ru
+servers:
+  - url: 'http://localhost:3000/v1'
+    description: Local development
+paths:
+  '/api/v1/subscription/{subscriptionId}/renewal-check':
+    post:
+      summary: Проверить достаточно ли средств для продления подписки
+      description: |
+        Выполняет проверку наличия необходимой суммы на счёте пользователя.
+        Если средств достаточно – возвращает успешный статус. Если нет – рекомендует способ пополнения.
+      operationId: checkRenewalFunds
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+          description: Идентификатор подписки
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - renewalAmount
+                - currency
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                  description: Идентификатор пользователя
+                  example: 123e4567-e89b-12d3-a456-426614174000
+                renewalAmount:
+                  type: number
+                  format: decimal
+                  minimum: 0.01
+                  description: 'Сумма, необходимая для продления'
+                  example: 9.99
+                currency:
+                  type: string
+                  pattern: '^[A-Z]{3}$'
+                  description: Валюта (ISO 4217)
+                  example: USD
+                paymentMethodId:
+                  type: string
+                  description: ID привязанного способа оплаты (опционально)
+                  example: pm_card_visa
+      responses:
+        '200':
+          description: Проверка выполнена успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - SUFFICIENT_FUNDS
+                      - INSUFFICIENT_FUNDS
+                      - PARTIAL_FUNDS
+                    example: SUFFICIENT_FUNDS
+                  availableBalance:
+                    type: number
+                    format: decimal
+                    description: Доступный баланс пользователя
+                    example: 150
+                  requiredAmount:
+                    type: number
+                    format: decimal
+                    example: 9.99
+                  currency:
+                    type: string
+                    example: USD
+                  canRetry:
+                    type: boolean
+                    description: Возможна ли повторная попытка списания позже
+                    example: true
+                  retryAt:
+                    type: string
+                    format: date-time
+                    description: Рекомендуемое время повторной попытки (если применимо)
+                    example: '2025-04-10T08:00:00Z'
+                  suggestedTopUpAmount:
+                    type: number
+                    format: decimal
+                    description: Рекомендуемая сумма пополнения (при недостатке)
+                    example: 9.99
+                  errorCode:
+                    type: string
+                    description: 'Код ошибки, если статус не SUFFICIENT_FUNDS'
+                    example: LOW_BALANCE
+                  errorMessage:
+                    type: string
+                    description: Пояснение для отображения пользователю
+                    example: 'Недостаточно средств на счёте. Пожалуйста, пополните баланс.'
+        '400':
+          description: Невалидные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизованный доступ
+        '403':
+          description: Доступ запрещён (подписка не принадлежит пользователю)
+        '404':
+          description: Подписка или пользователь не найдены
+        '429':
+          description: Слишком много запросов
+        '500':
+          description: Внутренняя ошибка сервера
+      tags:
+        - Subscription
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          example: INVALID_AMOUNT
+        errorMessage:
+          type: string
+          example: Сумма продления должна быть положительной
+        timestamp:
+          type: string
+          format: date-time
+tags:
+  - name: Subscription
