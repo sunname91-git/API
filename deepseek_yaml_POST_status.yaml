@@ -1,0 +1,62 @@
+openapi: 3.0.0
+paths:
+  /api/v1/product/{productId}/status:
+    post:
+      summary: Обновить статус товара на основе количества
+      operationId: updateProductStatusByQuantity
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+                  description: Новое количество товара
+                  example: 150
+                forceUpdate:
+                  type: boolean
+                  default: false
+                  description: Принудительно пересчитать и обновить статус
+      responses:
+        '200':
+          description: Статус успешно обновлён
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  productId:
+                    type: string
+                  previousStatus:
+                    type: string
+                    enum: [Создан, в Обработке, Подтвержден]
+                  currentStatus:
+                    type: string
+                    enum: [Создан, в Обработке, Подтвержден]
+                  quantity:
+                    type: integer
+                  statusChanged:
+                    type: boolean
+                  reason:
+                    type: string
+                  updatedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Некорректный запрос (quantity < 1)
+        '404':
+          description: Товар не найден
+        '409':
+          description: Конфликт изменения статуса

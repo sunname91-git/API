@@ -1,0 +1,62 @@
+openapi: 3.0.0
+info:
+  title: Subscription Funds Check API
+  version: 1.0.0
+
+paths:
+  /api/v1/subscriptions/{subscriptionId}/check-funds:
+    post:
+      summary: Проверка достаточности средств для продления подписки
+      operationId: checkSufficientFunds
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema: { type: string }
+          example: "sub_123456"
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, amount, currency, paymentMethodId]
+              properties:
+                userId: { type: string, example: "usr_789" }
+                amount: { type: integer, minimum: 1, example: 990 }
+                currency: { type: string, enum: [RUB, USD, EUR], example: "RUB" }
+                paymentMethodId: { type: string, example: "pm_card_visa" }
+      responses:
+        200:
+          description: Проверка выполнена
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sufficient, availableAmount, requiredAmount, currency]
+                properties:
+                  sufficient: { type: boolean }
+                  availableAmount: { type: integer }
+                  requiredAmount: { type: integer }
+                  currency: { type: string }
+                  checkId: { type: string }
+                  expiresAt: { type: string, format: date-time }
+        422:
+          description: Бизнес-ошибка (недостаточно средств)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode: { type: string, enum: [INSUFFICIENT_FUNDS, PAYMENT_METHOD_INVALID] }
+                  message: { type: string }
+                  details:
+                    type: object
+        429:
+          description: Rate limit exceeded
+          headers:
+            X-RateLimit-Remaining: { schema: { type: integer } }
